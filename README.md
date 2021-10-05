@@ -98,7 +98,7 @@ The script will disable Hyper-v (WSL2) but you can still use docker cli
 ### Running scripts
 
 1. Unzip or git clone this repo
-    - https://github.com/kennyhyun/linuxdev/archive/refs/heads/main.zip
+    - https://github.com/whitech-pty-ltd/linuxdev/archive/refs/heads/main.zip
 1. Run setup scripts
     - Windows
         1. Install host dependencies and dev tools
@@ -251,6 +251,10 @@ if you don't have installed docker or docker-compose, you can install by running
 - Share virtualbox env across Bootcamp
 - Provide recommended fonts with Powerline patch
 
+## Notice
+
+Please also have a look at [the source repo](https://github.com/kennyhyun/linuxdev) which this repo is forked from.
+
 ## License
 
-[MIT License](https://github.com/kennyhyun/linuxdev/blob/main/LICENSE)
+[MIT License](https://github.com/whitech-pty-ltd/linuxdev/blob/main/LICENSE.WHITECH)
