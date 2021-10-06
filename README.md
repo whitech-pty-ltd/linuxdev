@@ -134,7 +134,7 @@ Now you can ssh into Linux dev env
 ssh linuxdev
 ```
 
-For Windows Terminal, there is a profile for the machine.
+For Windows Terminal, there is also a profile generated for the machine.
 
 An additional external configuration [dotfiles project like this](https://github.com/kennyhyun/dotfiles) can be added 
 
@@ -147,7 +147,7 @@ If DOTFILES_REPO has been defined in `.env`, it clones it to ~/dotfiles and try 
 
 any of files which is executable.
 
-### setup parameters
+### Setup parameters
 
 ```powershell
 .\setup.ps1 -nodevtools
