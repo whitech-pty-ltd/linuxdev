@@ -5,7 +5,7 @@ if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
   exit -1
 }
 
-If ($args.Contains("-nodevtools")) {
+If ($args.Contains("-nodevtools") -or $args.Contains("-production")) {
   $noDevTools=1
 }
 
