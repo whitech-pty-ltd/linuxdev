@@ -60,3 +60,7 @@ ssh.config*
 backup
 *~
 *.vdi
+
+/gatsby
+/.github
+/package*.json
