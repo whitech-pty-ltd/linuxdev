@@ -12,8 +12,9 @@ $machine_title=(Get-Culture).TextInfo.ToTitleCase($machine_name)
 $PROFILE_DIR="$HOME\AppData\Local\Microsoft\Windows Terminal\Fragments\$machine_title"
 New-Item -ItemType Directory -Force -Path $PROFILE_DIR | Out-Null
 
+######################
+# read json and create the updated profile
 $PROFILE_FILE="$HOME\AppData\Local\Microsoft\Windows Terminal\Fragments\$machine_title\$machine_name.json"
-#write-host $PROFILE_FILE
 $iconfile="$PSScriptRoot\config\debian.png"
 $guid=New-Guid
 
@@ -27,7 +28,5 @@ $profile.guid="{$guid}"
 $profile.name=$machine_title
 $profile.commandline="ssh -X $machine_name"
 $profile.icon=$iconfile
-
-#$json | ConvertTo-Json -Depth 4
 
 $json | ConvertTo-Json -Depth 4 | Out-File -encoding ASCII -FilePath $PROFILE_FILE
