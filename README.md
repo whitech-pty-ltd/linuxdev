@@ -163,6 +163,10 @@ will skip installing git, vscode, and terminal.
 
 `--no-{vscode,git,vagrant,virtualbox,...}` is also available
 
+** git should be required for Windows to run git-bash
+
+** you can still install it manually with `--no-git` parameter
+
 ### [Useful Commands](./docs/tips.md)
 
 ## Demo
