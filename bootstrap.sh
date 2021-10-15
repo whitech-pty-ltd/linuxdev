@@ -359,7 +359,7 @@ set COMPOSE_CONVERT_WINDOWS_PATHS=1
 fi
 
 # set env vars
-vm_env_vars=$(set | grep "__VM__[A-Z_]\+=" | cut -c 7-)
+vm_env_vars=$(set | grep "__VM__[A-Z_]\+=" | cut -c 7- | tr -d "'")
 ssh $machine_name << EOSSH
   echo "$vm_env_vars" | while read -r line; do
     entry=\$(echo \$line)
@@ -369,6 +369,9 @@ ssh $machine_name << EOSSH
       echo "export \$entry" >> ~/.bashrc
     fi
   done
+  if ! [ -f "\$HOME/.zshenv" ]; then
+    echo "test -f ~/.zshrc && . ~/.zshrc" >> \$HOME/.zshenv
+  fi
 EOSSH
 
 #### create ssh key
