@@ -55,8 +55,9 @@ Vagrant.configure("2") do |config|
     abs_path = File.expand_path(host_path)
     # windows drive path conversion
     abs_path = abs_path.sub!(/^([a-zA-Z]):\//){ '/' + $1.downcase + '/' }
-    puts "Adding synced_folder: " + host_path + ':' + abs_path
-    config.vm.synced_folder host_path, abs_path
+    # use only for debug: vagrant ssh-config will have this too
+    # puts "Adding synced_folder: " + host_path + ':' + abs_path
+    config.vm.synced_folder host_path, abs_path, create: true
   }
 
   # Provider-specific configuration so you can fine-tune various
@@ -96,7 +97,7 @@ Vagrant.configure("2") do |config|
   #   apt-get install -y apache2
   # SHELL
   #config.vm.provision "file", source: "./.vagrant/machines/default/virtualbox/private_key", destination: "$HOME/.ssh/id_rsa"
-  config.vm.provision "shell", inline: "echo 'source /vagrant/config/env_var.sh' > /etc/profile.d/env_var.sh", run: "always"
+  config.vm.provision "shell", inline: "echo '. /vagrant/config/env_var.sh' > /etc/profile.d/env_var.sh", run: "always"
   config.vm.provision "docker",
     images: ["stanback/alpine-samba", "docker/dockerfile:1.0-experimental"]
 end

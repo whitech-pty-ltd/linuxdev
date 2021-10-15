@@ -188,10 +188,10 @@ fi
   crontab -l
 
 # add hosts entry
-echo $vm_hosts_vars | while read -r line; do
-  host=\$(echo \$line | cut -d"=" -f 1)
-  ip=\$(echo \$line | cut -d"=" -f 2)
-  if [ -z "\$(grep "\$ip \$host")" ]; then
+echo "$vm_hosts_vars" | while read -r line; do
+  host=\$(echo \$line | cut -d"=" -f 2)
+  ip=\$(echo \$line | cut -d"=" -f 1 | cut -f1,2,3,4 -d'_' | tr _ ".")
+  if [ -z "\$(grep "\$ip \$host" /etc/hosts)" ]; then
     echo "Adding \"\$ip \$host\" to hosts file"
     echo "\$ip \$host" >> /etc/hosts
   fi
@@ -216,15 +216,6 @@ else
 fi
 
 ssh $machine_name "touch ~/.hushlogin"
-
-# set env vars
-vm_env_vars=$(set | grep "__VM__[A-Z_]\+=" | cut -c 7-)
-ssh $machine_name << EOSSH
-  echo $vm_env_vars | while read -r line; do
-    echo "export \$line" >> .zshrc
-    echo "export \$line" >> .bashrc
-  done
-EOSSH
 
 #### user $username
 ssh $machine_name << EOSSH
@@ -366,6 +357,19 @@ set COMPOSE_CONVERT_WINDOWS_PATHS=1
     setx COMPOSE_CONVERT_WINDOWS_PATHS 1
   fi
 fi
+
+# set env vars
+vm_env_vars=$(set | grep "__VM__[A-Z_]\+=" | cut -c 7-)
+ssh $machine_name << EOSSH
+  echo "$vm_env_vars" | while read -r line; do
+    entry=\$(echo \$line)
+    if [ -z "\$(grep "export \$entry" ~/.zshrc)" ]; then
+      echo "Exporting env var (\$entry)"
+      echo "export \$entry" >> ~/.zshrc
+      echo "export \$entry" >> ~/.bashrc
+    fi
+  done
+EOSSH
 
 #### create ssh key
 ssh $machine_name << EOSSH

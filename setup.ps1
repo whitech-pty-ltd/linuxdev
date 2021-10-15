@@ -41,7 +41,6 @@ If ($args.Contains("-nohyperv")) {
 }
 
 if ($noDevTools) {
-  $noGit=1
   $noVsCode=1
   $noTerminal=1
 }
@@ -133,14 +132,16 @@ if ($installed_terminal_version -And $terminal_asset.name -match $installed_term
 # Install vagrant manager
 If ($withVagrantManager) {
   Write-Host ---------------------------------------
-  If (Test-Path "$env:LOCALAPPDATA\Programs\Vagrant Manager\VagrantManager.exe") {
+  $vmanager_location1="$env:ProgramFiles (x86)\Vagrant Manager\VagrantManager.exe"
+  $vmanager_location2="$env:LOCALAPPDATA\Programs\Vagrant Manager\VagrantManager.exe"
+  If ((Test-Path $vmanager_location1) -or (Test-Path $vmanager_location2)) {
     Write-Host Vagrant Manager is already installed
   } else {
     Write-Host Installing Vagrant Manager
     $vmanager_installer = download_github_release_installer -url "https://api.github.com/repos/lanayotech/vagrant-manager-windows/releases/latest" -pattern "*.exe"
-    $install_args = "/SP- /SILENT /SUPPRESSMSGBOXES /NOCANCEL /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS"
-    Write-Host Installing $installer, $install_args
-    Start-Process -FilePath $installer -ArgumentList $install_args -Wait
+    $install_args = "/SP- /SILENT /NOCANCEL /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS"
+    Write-Host Installing $vmanager_installer, $install_args
+    Start-Process -FilePath $vmanager_installer -ArgumentList $install_args
     Write-Host Installed Vagrant Manager.
   }
 }
@@ -193,14 +194,14 @@ Try {
   $installed_git_version = git --version | %{$_.split(' ')[-1]} | %{$_.SubString(0, $_.IndexOf('.windows'))}
 } catch {}
 $git_asset = get_github_release_url -url "https://api.github.com/repos/git-for-windows/git/releases/latest" -pattern "*64-bit.exe"
-Write-Host $git_asset.name
+Write-Host "$git_asset.name (installed: $installed_git_version)"
 if ($installed_git_version -And $git_asset.name -match $installed_git_version) {
   Write-Host already installed
 } Else {
   # download installer unless exists
   $git_installer = download_from_installer_url -url $git_asset.url -name $git_asset.name
   $git_install_inf = "$PSScriptRoot\config\git.inf"
-  $install_args = "/SP- /SILENT /SUPPRESSMSGBOXES /NOCANCEL /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /LOADINF=""$git_install_inf"""
+  $install_args = "/SP- /SILENT /NOCANCEL /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /LOADINF=""$git_install_inf"""
   Write-Host Installing $git_installer, $install_args
   Start-Process -FilePath $git_installer -ArgumentList $install_args -Wait
   Write-Host Installed Git.
