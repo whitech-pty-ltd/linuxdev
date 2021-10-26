@@ -341,7 +341,7 @@ if [ -z "$windows" ]; then
 else
   mkdir -p ~/Programs
   # add Windows Terminal Profile
-  powershell ./add-machine-profile.ps1 $machine_name
+  powershell -executionPolicy ByPass -File ./add-machine-profile.ps1 $machine_name
 
   if [ -f ~/Programs/docker_env.bat ]; then
     echo "-----
@@ -349,7 +349,7 @@ The docker environment is already set. delete ~/Programs/docker_env.bat and try 
   else
     echo "-----
 Setting Docker Environment Variables for Windows. Please check DOCKER_HOST and related ones if you want to use other environments"
-    powershell ./add-programs-to-path.ps1
+    powershell -executionPolicy ByPass -File ./add-programs-to-path.ps1
     echo "@echo off
 set DOCKER_CERT_PATH=%userprofile%\.docker\certs.$machine_name
 set DOCKER_HOST=tcp://$ip_address:$docker_port
