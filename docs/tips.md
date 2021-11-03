@@ -14,6 +14,8 @@ date: 2021-09-26
 
 If you want to repeat from scratch for some reason, you can run `./destroy.sh` and retry `bootstrap.sh`.
 
+## Docker
+
 docker is available and you will see the samba container running for the VM
 
 Please use install-docker-clients script if you don't have docker clients installed.
@@ -50,6 +52,16 @@ will skip installing git(for Mac), vscode, and terminal.
 
 ** git should be required for Windows to run git-bash
 
+### basic os setting
+
+`-withosconfig` will update registry for
+
+- Disable Secure Desktop (UAC Dimming)
+- Set active hour (8am to 2am)
+- Show hidden files and extensions
+- Disable Windows Update
+
+You can also run separately by `scripts/basic-config.ps1`
 
 ## Docker Storage
 
@@ -78,7 +90,7 @@ This vgrantfile has additional space file of 40GB and it can be configured by `D
 Right click windows menu and click Windows Powershell (Admin)
 
 ```powershell
-Set-ExecutionPolicy RemoteSigned
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 Run the setup script in the directory of this repo
