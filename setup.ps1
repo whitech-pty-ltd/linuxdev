@@ -49,6 +49,13 @@ if ($noDevTools) {
   $noTerminal=1
 }
 
+$OsVersion = (Get-WmiObject -class Win32_OperatingSystem).Caption
+$OsArchBit = (Get-WMIObject Win32_Processor).AddressWidth
+$OsArch = "x86"
+if ($OsArchBit -ne 32) {
+  $OsArch = "x64"
+}
+
 Write-Host "==================================
 Note: This will turn off WSL2
   and upgrade exsting softwares like
@@ -90,21 +97,33 @@ disable-optional-feature -featureName Microsoft-Hyper-V-Hypervisor
 disable-optional-feature -featureName VirtualMachinePlatform
 disable-optional-feature -featureName HypervisorPlatform
 
-bcdedit /set hypervisorlaunchtype off
+Start-Process -Wait -PassThru powershell -Verb runAs -ArgumentList 'bcdedit /set hypervisorlaunchtype off'
+
 }
 
 $virtualization_enabled = systeminfo |select-string "Virtualization Enabled"|out-string|%{$_.SubString($_.IndexOf(': ')+1).trim()}
-
 Write-Host Virtualization support: $virtualization_enabled
 
 function get_github_release_url {
   param($url, $pattern)
-  $asset = Invoke-RestMethod -Method Get -Uri "$url" | % assets | where name -like "$pattern"
+  $asset = Invoke-RestMethod -Method Get -Uri "$url" | foreach-object assets | where-object name -like "$pattern"
+  if (!$asset) {
+    Throw "Could not find asset, please review pattern: '$pattern'
+ "
+  }
+  if (($asset).Count) {
+    Throw "Could not find a unique assets, please review pattern: '$pattern'
+matched $($asset.name -Join ", ")
+ "
+  }
   return @{"url" = $($asset.browser_download_url); "name" = $($asset.name)}
 }
 
 function download_from_installer_url {
   param ($url, $filename)
+  if ($url -like '//*') {
+    $url = "https:$url"
+  }
   if (-not $filename) {
     $filename = $url.split("=/?")[-1]
   }
@@ -132,7 +151,11 @@ function download_github_release_installer {
 If (-Not $noTerminal) {
 Write-Host ---------------------------------------
 $installed_terminal_version = (Get-AppxPackage -Name *WindowsTerminal).Version
-$terminal_asset = get_github_release_url -url "https://api.github.com/repos/microsoft/terminal/releases/latest" -pattern "*msixbundle"
+$OsPrefix = "Win10"
+if ($OsVersion -like '* 11*') {
+  $OsPrefix = "Win11"
+}
+$terminal_asset = get_github_release_url -url "https://api.github.com/repos/microsoft/terminal/releases/latest" -pattern "*$OsPrefix*msixbundle"
 Write-Host $terminal_asset.name
 if ($installed_terminal_version -And $terminal_asset.name -match $installed_terminal_version) {
   Write-Host already installed
@@ -212,7 +235,7 @@ Write-Host ---------------------------------------
 Try {
   $installed_git_version = git --version | %{$_.split(' ')[-1]} | %{$_.SubString(0, $_.IndexOf('.windows'))}
 } catch {}
-$git_asset = get_github_release_url -url "https://api.github.com/repos/git-for-windows/git/releases/latest" -pattern "*64-bit.exe"
+$git_asset = get_github_release_url -url "https://api.github.com/repos/git-for-windows/git/releases/latest" -pattern "*$OsArchBit-bit.exe"
 Write-Host $git_asset.name "(installed: $installed_git_version)"
 if ($installed_git_version -And $git_asset.name -match $installed_git_version) {
   Write-Host already installed
@@ -291,7 +314,7 @@ Try {
 } catch {}
 #Write-Host Vagrant version: $installed_vagrant_version
 $vagrant_url = "https://www.vagrantup.com/downloads"
-$vagrant_link = (Invoke-WebRequest -UseBasicParsing -Uri $vagrant_url).Links | Where-Object {$_.href -like "*64.msi"}
+$vagrant_link = (Invoke-WebRequest -UseBasicParsing -Uri $vagrant_url).Links | Where-Object {$_.href -like "*$OsArchBit.msi"}
 $vagrant_installer_url = [System.Uri]$vagrant_link.href
 $vagrant_installer_filename = $vagrant_installer_url.Segments[-1]
 $vagrant_installer_version = echo $vagrant_installer_filename | %{$_.Split('_')[1]}

@@ -64,3 +64,8 @@ backup
 /gatsby
 /.github
 /package*.json
+
+# startup configurations
+/config.json
+/status.json
+/ipaddr
