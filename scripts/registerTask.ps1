@@ -14,7 +14,7 @@ $Action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NonInter
 ## whenever machine started
 ## every morning at 6 am
 $Trigger =  @(
-  $(New-ScheduledTaskTrigger -AtStartup),
+  $(New-ScheduledTaskTrigger -AtLogon),
   $(New-ScheduledTaskTrigger -Daily -At 6am)
 )
 $Settings = New-ScheduledTaskSettingsSet

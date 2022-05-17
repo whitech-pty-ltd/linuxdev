@@ -66,6 +66,16 @@ if (-not $noConfirm) {
 Read-Host -Prompt "Press any key to continue or ^C to stop"
 }
 
+# read .env
+$envfileContent = Get-Content $PSScriptRoot\.env -ErrorAction continue
+$envfile=[ordered]@{}
+$envfileContent|ForEach-Object{
+  $key, $value = $_.split("=")
+  if ($key) {
+    $envfile[$key]=$value
+  }
+}
+
 $machine_path = [Environment]::GetEnvironmentVariables("Machine")['Path']
 $user_path = [Environment]::GetEnvironmentVariables("User")['Path']
 $env:Path = "$machine_path;$user_path"
@@ -101,7 +111,7 @@ Start-Process -Wait -PassThru powershell -Verb runAs -ArgumentList 'bcdedit /set
 
 }
 
-$virtualization_enabled = systeminfo |select-string "Virtualization Enabled"|out-string|%{$_.SubString($_.IndexOf(': ')+1).trim()}
+$virtualization_enabled = systeminfo |select-string "Virtualization Enabled"|out-string|ForEach-Object{$_.SubString($_.IndexOf(': ')+1).trim()}
 Write-Host Virtualization support: $virtualization_enabled
 
 function get_github_release_url {
@@ -201,12 +211,12 @@ $vscode_url = "https://code.visualstudio.com/sha/download?build=stable&os=win32-
 $vscode_installer_url = [System.Uri](Invoke-WebRequest -UseBasicParsing -Method Head -MaximumRedirection 0 -Uri $vscode_url -ErrorAction SilentlyContinue).Headers.Location
 
 #Write-Host VS Code installer url: $vscode_installer_url
-$vscode_installer_filename = $vscode_installer_url.Segments[-1]
-$vscode_installer_version = echo $vscode_installer_filename| %{$_.split('-')[-1]} | %{$_.SubString(0, $_.IndexOf('.exe'))}
-#Write-Host $vscode_installer_filename, $vscode_installer_version
+$vscode_installer_filename = $vscode_installer_url.Segments | Select-Object -Last 1
+$vscode_installer_version = $vscode_installer_filename| select-string -Pattern '([0-9]+(\.[0-9]+)+)' | ForEach-Object{$_.Matches[0].Value}
+Write-Host "$vscode_installer_filename, $vscode_installer_version"
 
 $vscode_installer = "$env:temp\$($vscode_installer_filename)"
-Write-Host VS Code $vscode_installer_version "(installed: $installed_vscode_version)"
+Write-Host "VS Code installer `"$vscode_installer_version`" (installed: $installed_vscode_version)"
 if ($installed_vscode_version -And $vscode_installer_version -match $installed_vscode_version) {
   Write-Host already installed
 } else {
@@ -260,15 +270,27 @@ Try {
   $installed_vbox_version = (& $vbox_manage --version)
 } catch {}
 #Write-Host VBox version: $installed_vbox_version
-$vbox_url = "https://www.virtualbox.org/wiki/Downloads"
-$vbox_link = (Invoke-WebRequest -UseBasicParsing -Uri $vbox_url).Links | Where-Object {$_.href -like "*Win.exe"}
+try {
+  if ($envfile._VER_VIRTUALBOX) {
+    $versionString = $envfile._VER_VIRTUALBOX | select-string -Pattern '[0-9.]+' | ForEach-Object{$_.Matches[0].Value}
+    $versionPrefix = $versionString | select-string -Pattern '[0-9]+\.[0-9]+' | ForEach-Object{$_.Matches[0].Value -replace "\.","_"}
+    $vbox_url = "https://www.virtualbox.org/wiki/Download_Old_Builds_$versionPrefix"
+    $vbox_link = (Invoke-WebRequest -UseBasicParsing -Uri $vbox_url).Links | Where-Object {$_.href -like "*$versionString*Win.exe"}
+  }
+  if (!$vbox_link) {
+    $vbox_url = "https://www.virtualbox.org/wiki/Downloads"
+    $vbox_link = (Invoke-WebRequest -UseBasicParsing -Uri $vbox_url).Links | Where-Object {$_.href -like "*$versionString*Win.exe"}
+  }
+} catch {
+  $_.Exception.Response.StatusCode
+}
 $vbox_installer_url = [System.Uri]$vbox_link.href
 #Write-Host VBox installer url: $vbox_installer_url
-$vbox_installer_filename = $vbox_installer_url.Segments[-1]
-$vbox_installer_version = echo $vbox_installer_filename | %{$_.SubString($_.IndexOf('-')+1)} | %{$_.SubString(0, $_.IndexOf('-Win'))}
+$vbox_installer_filename = $vbox_installer_url.Segments | Select-Object -Last 1
+$vbox_installer_version = Write-Output $vbox_installer_filename | select-string -Pattern '([0-9]+(\.[0-9]+)+)' | ForEach-Object{$_.Matches[0].Value}
 $vbox_installer = "$env:temp\$($vbox_installer_filename)"
 #Write-Host $vbox_installer_version, $installed_vbox_version
-Write-Host "VirtualBox $vbox_installer_version (installed: $installed_vbox_version)"
+Write-Host "VirtualBox installer `"$vbox_installer_version`" (installed: $installed_vbox_version)"
 
 function save-vm-states {
   # list running vms and savestate
@@ -281,7 +303,9 @@ function save-vm-states {
   }
 }
 
-if ($installed_vbox_version -And $installed_vbox_version -match $vbox_installer_version.split('-')[1] ) {
+if (!$vbox_installer_url) {
+  Write-Host "Could not find the download url $versionString"
+} elseif ($installed_vbox_version -And $installed_vbox_version -match $vbox_installer_version) {
   Write-Host already installed
 } else {
   # download installer unless exists
@@ -312,15 +336,29 @@ Write-Host ---------------------------------------
 Try {
   $installed_vagrant_version = vagrant --version | %{$_.split(' ')[1]}
 } catch {}
-#Write-Host Vagrant version: $installed_vagrant_version
-$vagrant_url = "https://www.vagrantup.com/downloads"
-$vagrant_link = (Invoke-WebRequest -UseBasicParsing -Uri $vagrant_url).Links | Where-Object {$_.href -like "*$OsArchBit.msi"}
+
+if ($envfile._VER_VAGRANT) {
+  $versionString = $envfile._VER_VAGRANT | select-string -Pattern '[0-9.]+' | ForEach-Object{$_.Matches[0].Value}
+}
+
+if ($versionString) {
+  $vagrant_url = "https://releases.hashicorp.com/vagrant/$versionString"
+} else {
+  $vagrant_url = "https://www.vagrantup.com/downloads"
+}
+try {
+  $vagrant_link = (Invoke-WebRequest -UseBasicParsing -Uri $vagrant_url).Links | Where-Object {$_.href -like "*$OsArchBit.msi"}
+} catch {
+  $_.Exception.Response.StatusCode
+}
 $vagrant_installer_url = [System.Uri]$vagrant_link.href
-$vagrant_installer_filename = $vagrant_installer_url.Segments[-1]
-$vagrant_installer_version = echo $vagrant_installer_filename | %{$_.Split('_')[1]}
+$vagrant_installer_filename = $vagrant_installer_url.Segments | Select-Object -Last 1
+$vagrant_installer_version = $vagrant_installer_filename | select-string -Pattern '([0-9]+(\.[0-9]+)+)' | ForEach-Object{$_.Matches[0].Value}
 $vagrant_installer = "$env:temp\$($vagrant_installer_filename)"
-Write-Host Vagrant $vagrant_installer_version
-if ($installed_vagrant_version -And $installed_vagrant_version -match $vagrant_installer_version ) {
+Write-Host "Vagrant installer `"$vagrant_installer_version`" (installed: $installed_vagrant_version)"
+if (!$vagrant_installer_url) {
+  Write-Host "Could not find the download url $versionString"
+} elseif ($installed_vagrant_version -And $installed_vagrant_version -match $vagrant_installer_version) {
   Write-Host already installed
 } else {
   # download installer unless exists
@@ -342,9 +380,11 @@ if ($installed_vagrant_version -And $installed_vagrant_version -match $vagrant_i
 }
 
 Write-Host ==================================
-Write-Host Done. Please continue to bootstrap
 
 if ($virtualization_enabled -ne "Yes") {
-  Write-Host Virtualization is not enabled, please follow this link and try to enable
-  Write-Host https://www.smarthomebeginner.com/enable-hardware-virtualization-vt-x-amd-v/
+  Write-Host "Virtualization is not enabled, please follow this link and try to enable"
+  Write-Host "https://www.smarthomebeginner.com/enable-hardware-virtualization-vt-x-amd-v/"
+  exit -1
+} else {
+  Write-Host "Done. Please continue to bootstrap"
 }
