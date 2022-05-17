@@ -2,6 +2,9 @@
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
+noStartupScript=$(echo ${@} | grep -w '\-\-noStartupScript' >> /dev/null && echo 1 || echo "")
+echo "bootstrap.sh:" $@
+
 set +e
 
 sed="sed"
@@ -19,6 +22,12 @@ source .env
 
 expand_disk_size=${EXPAND_DISK_GB:-4}
 swapfile=${SWAPFILE:-}
+COMPOSE_VERSION=${_VER_DOCKER_COMPOSE}
+
+if [ "$_VER_DOCKER" ]; then
+  # setting docker version for provisioning
+  sed -i "s/VERSION=.*/VERSION=$_VER_DOCKER/" $SCRIPT_DIR/config/env_var.sh
+fi
 
 # get username from env or prompt
 username=$VAGRANT_USERNAME
@@ -208,6 +217,9 @@ EOSSH
 $ssh "rm ~/.hushlogin"
 
 echo ---------------------
+if [ "$windows" ]; then
+  mkdir -p ~/.ssh # doesn't need chmod 600
+fi
 if [ -z "$(grep -w "Host $machine_name" ~/.ssh/config)" ]; then
   echo Adding ssh config for $machine_name
   cat $SSH_CONFIG.user >> ~/.ssh/config
@@ -333,6 +345,8 @@ if [ "$downloaded" ]; then
 fi
 fi
 
+#### TODO: upgrade docker if required
+
 #### init dotfiles
 if [ -z "$DOTFILES_REPO" ]; then
   echo "---------
@@ -361,11 +375,17 @@ EOSSH
 fi
 
 if [ -z "$windows" ]; then
-  $SCRIPT_DIR/scripts/setup-launchd.sh
+  if [ -z "$noStartupScript" ]; then
+    $SCRIPT_DIR/scripts/setup-launchd.sh
+  fi
 else
   mkdir -p ~/Programs
   # add Windows Terminal Profile
-  powershell -executionPolicy ByPass -File $SCRIPT_DIR/add-machine-profile.ps1 $machine_name
+  if [ "$noStartupScript" ]; then
+    powershell -executionPolicy ByPass -File $SCRIPT_DIR/add-machine-profile.ps1 $machine_name -noStartupScript
+  else
+    powershell -executionPolicy ByPass -File $SCRIPT_DIR/add-machine-profile.ps1 $machine_name
+  fi
 
   if [ -f ~/Programs/docker_env.bat ]; then
     echo "-----
