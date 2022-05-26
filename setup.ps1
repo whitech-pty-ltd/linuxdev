@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
   Write-Host "Please run as an administrator"
-  exit -1
+  exit 109
 }
 
 If ($args.Contains("-noconfirm")) {
@@ -55,6 +55,11 @@ $OsArch = "x86"
 if ($OsArchBit -ne 32) {
   $OsArch = "x64"
 }
+$OsBuildNumber = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
+if ($OsBuildNumber -lt 19041) {
+  write-error "Windows Build number should be at least 19041"
+  exit 101
+}
 
 Write-Host "==================================
 Note: This will turn off WSL2
@@ -76,6 +81,7 @@ $envfileContent|ForEach-Object{
   }
 }
 
+# apply path
 $machine_path = [Environment]::GetEnvironmentVariables("Machine")['Path']
 $user_path = [Environment]::GetEnvironmentVariables("User")['Path']
 $env:Path = "$machine_path;$user_path"
@@ -89,6 +95,7 @@ if (-not $noHyperv) {
 Write-Host ---------------------------------------
 Write-Host " Disabling Hypervisor Platform"
 
+try {
 function disable-optional-feature {
   param ($featureName)
   $feature = Get-WindowsOptionalFeature -online -FeatureName $featureName
@@ -108,6 +115,11 @@ disable-optional-feature -featureName VirtualMachinePlatform
 disable-optional-feature -featureName HypervisorPlatform
 
 Start-Process -Wait -PassThru powershell -Verb runAs -ArgumentList 'bcdedit /set hypervisorlaunchtype off'
+
+} catch {
+  $_
+  exit 102
+}
 
 }
 
@@ -384,7 +396,7 @@ Write-Host ==================================
 if ($virtualization_enabled -ne "Yes") {
   Write-Host "Virtualization is not enabled, please follow this link and try to enable"
   Write-Host "https://www.smarthomebeginner.com/enable-hardware-virtualization-vt-x-amd-v/"
-  exit -1
+  exit 108
 } else {
   Write-Host "Done. Please continue to bootstrap"
 }

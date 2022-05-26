@@ -218,6 +218,7 @@ $ssh "rm ~/.hushlogin"
 
 echo ---------------------
 if [ "$windows" ]; then
+  echo "Creating ~/.ssh for Windows host"
   mkdir -p ~/.ssh # doesn't need chmod 600
 fi
 if [ -z "$(grep -w "Host $machine_name" ~/.ssh/config)" ]; then
@@ -302,6 +303,8 @@ if [ -f "/dummy" ]; then
 fi
 EOSSH
 
+echo "Creating Docker Certs"
+
 if [ -d ~/.docker/certs.$machine_name ]; then
   echo "--------
 ~/.docker/certs.$machine_name already exists, skip creating Docker certs"
@@ -327,6 +330,7 @@ fi
 mkdir -p $SCRIPT_DIR/data/fonts
 touch $SCRIPT_DIR/data/fonts/.download_start_file
 if [ "$FONT_URLS" ] || [ "$PATCHED_FONT_URLS" ]; then
+echo "Installing fonts"
 ssh $machine_name "bash /vagrant/scripts/download-fonts.sh \"$FONT_URLS\" \"$PATCHED_FONT_URLS\""
 downloaded=$(find $SCRIPT_DIR/data/fonts -maxdepth 1 -newer $SCRIPT_DIR/data/fonts/.download_start_file -type f -name "*.ttf")
 if [ "$downloaded" ]; then
@@ -347,6 +351,7 @@ fi
 
 #### TODO: upgrade docker if required
 
+echo "Installing dotfiles"
 #### init dotfiles
 if [ -z "$DOTFILES_REPO" ]; then
   echo "---------
@@ -374,6 +379,7 @@ fi
 EOSSH
 fi
 
+echo "Setting up host environments"
 if [ -z "$windows" ]; then
   if [ -z "$noStartupScript" ]; then
     $SCRIPT_DIR/scripts/setup-launchd.sh
