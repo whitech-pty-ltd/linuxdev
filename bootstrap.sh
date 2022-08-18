@@ -18,7 +18,7 @@ echo =================================
 echo Bootstrap vagrant machine
 echo =================================
 
-source .env
+source ./.env
 
 expand_disk_size=${EXPAND_DISK_GB:-4}
 swapfile=${SWAPFILE:-}
@@ -112,6 +112,9 @@ ssh="ssh -F $SSH_CONFIG.root root"
 docker_port=${DOCKER_PORT:-2376}
 ip_address=${IP_ADDRESS:-192.168.99.123}
 $ssh "touch ~/.hushlogin"
+
+$ssh "zsh -c \"Hello from zsh\""
+$ssh "docker -v"
 
 if [ -z "$exists" ]; then
   echo "user $username not found"
