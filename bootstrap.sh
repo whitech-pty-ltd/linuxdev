@@ -113,7 +113,6 @@ docker_port=${DOCKER_PORT:-2376}
 ip_address=${IP_ADDRESS:-192.168.99.123}
 $ssh "touch ~/.hushlogin"
 
-$ssh "zsh -c \"Hello from zsh\""
 $ssh "docker -v"
 
 if [ -z "$exists" ]; then
