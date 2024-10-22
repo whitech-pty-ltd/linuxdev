@@ -177,7 +177,7 @@ $OsPrefix = "Win10"
 if ($OsVersion -like '* 11*') {
   $OsPrefix = "Win11"
 }
-$terminal_asset = get_github_release_url -url "https://api.github.com/repos/microsoft/terminal/releases/latest" -pattern "*$OsPrefix*msixbundle"
+$terminal_asset = get_github_release_url -url "https://api.github.com/repos/microsoft/terminal/releases/latest" -pattern "*msixbundle"
 Write-Host $terminal_asset.name
 if ($installed_terminal_version -And $terminal_asset.name -match $installed_terminal_version) {
   Write-Host already installed
