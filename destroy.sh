@@ -17,7 +17,7 @@ vagrant status
 
 exitCode=$?
 
-if [[ $exitCode != 0 ]];then
+if [[ $exitCode != 0 ]] || [[ $vmstatus =~ "not created" ]];then
   echo the VM is not exists any more, removing configs
   mkdir -p backup
   mv ssh.config* backup/
