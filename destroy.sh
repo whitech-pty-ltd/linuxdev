@@ -13,7 +13,7 @@ vagrant destroy
 
 machine_name=${NAME:-linuxdev}
 
-vagrant status
+vmstatus=$(vagrant status)
 
 exitCode=$?
 
@@ -22,5 +22,6 @@ if [[ $exitCode != 0 ]] || [[ $vmstatus =~ "not created" ]];then
   mkdir -p backup
   mv ssh.config* backup/
   rm -rf ~/.docker/certs.$machine_name
+  rm -f status
   exit $exitCode
 fi
