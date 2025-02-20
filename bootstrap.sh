@@ -134,9 +134,6 @@ apt-get update
 
 apt list -a docker-ce
 
-apt_docker_ver=\$(apt list -a docker-ce |grep -m1 \${docker_version} |cut -d' ' -f2)
-echo "apt_docker_ver: \$apt_docker_ver"
-
 if [ -z "\$docker_version" ];then
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 else
