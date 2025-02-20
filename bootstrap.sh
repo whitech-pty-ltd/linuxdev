@@ -113,7 +113,35 @@ docker_port=${DOCKER_PORT:-2376}
 ip_address=${IP_ADDRESS:-192.168.99.123}
 $ssh "touch ~/.hushlogin"
 
-$ssh "docker -v"
+$ssh << EOSSH
+docker -v && exit;
+
+echo "====> Installing Docker"
+docker_version=\$(grep _VER_DOCKER /vagrant/.env | cut -d'=' -f2)
+echo "Version: \$docker_version"
+
+apt-get update
+apt-get install ca-certificates curl
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  \$(. /etc/os-release && echo "\$VERSION_CODENAME") stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt-get update
+
+apt list -a docker-ce
+
+apt_docker_ver=\$(apt list -a docker-ce |grep -m1 \${docker_version} |cut -d' ' -f2)
+echo "apt_docker_ver: \$apt_docker_ver"
+
+echo    "apt-get install -y docker-ce=\${apt_docker_ver} docker-ce-cli=\${apt_docker_ver} containerd.io docker-buildx-plugin docker-compose-plugin"
+apt-get install -y docker-ce=\${apt_docker_ver} docker-ce-cli=\${apt_docker_ver} containerd.io docker-buildx-plugin docker-compose-plugin
+docker -v
+
+EOSSH
 
 if [ -z "$exists" ]; then
   echo "user $username not found"
