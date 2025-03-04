@@ -394,7 +394,7 @@ else
   ssh $machine_name << EOSSH
 if ! [ -d ~/dotfiles ]; then
   echo "======= Cloning dotfiles"
-  git clone --recurse-submodules $DOTFILES_REPO ~/dotfiles && \
+  git clone $([ -n "$DOTFILES_BRANCH" ] && echo "--branch $DOTFILES_BRANCH") --recurse-submodules $DOTFILES_REPO ~/dotfiles && \
   init=\$(find dotfiles -maxdepth 1 -type f -executable -name 'init*' \
 -o -type f -executable -name "bootstrap*" -o -type f -executable -name "setup*" \
 -o -type f -executable -name "install*" \
