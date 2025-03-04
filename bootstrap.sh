@@ -277,7 +277,7 @@ sudo apt remove vim -y
 sudo apt update && sudo apt install \
 git \
 zsh \
-vim-gtk \
+vim \
 python3-pip \
 dnsutils \
 pass gnupg2 \
