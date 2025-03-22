@@ -117,7 +117,7 @@ $ssh << EOSSH
 docker -v && exit;
 
 echo "====> Installing Docker"
-docker_version=\$(grep _VER_DOCKER /vagrant/.env | cut -d'=' -f2)
+docker_version=\$(grep '^_VER_DOCKER=' /vagrant/.env |tail -1 |cut -d'=' -f2)
 echo "Version: \$docker_version"
 
 apt-get update
