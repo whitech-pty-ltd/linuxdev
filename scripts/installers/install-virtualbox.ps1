@@ -12,19 +12,24 @@ Try {
 try {
   if ($envfile._VER_VIRTUALBOX) {
     $versionString = $envfile._VER_VIRTUALBOX | select-string -Pattern '[0-9.]+' | ForEach-Object{$_.Matches[0].Value}
-    $versionPrefix = $versionString | select-string -Pattern '[0-9]+\.[0-9]+' | ForEach-Object{$_.Matches[0].Value -replace "\.","_"}
+    $versionPrefix = $versionString | select-string -Pattern '[0-9]+\.[0-9]+\.[0-9]+'
     $vbox_url = "https://www.virtualbox.org/wiki/Download_Old_Builds_$versionPrefix"
+    $vbox_url = "https://download.virtualbox.org/virtualbox/$versionPrefix"
+    Write-Host "vbox_url with _VER_VIRTUALBOX($($envfile._VER_VIRTUALBOX)) in $vbox_url, Finding \"*$versionString*Win.exe\""
     $vbox_link = (Invoke-WebRequest -UseBasicParsing -Uri $vbox_url).Links | Where-Object {$_.href -like "*$versionString*Win.exe"}
   }
   if (!$vbox_link) {
-    $vbox_url = "https://www.virtualbox.org/wiki/Downloads"
+    $vbox_url = "https://www.oracle.com/virtualization/technologies/vm/downloads/virtualbox-downloads.html"
+    Write-Host "Latest vbox_url: $vbox_url"
     $vbox_link = (Invoke-WebRequest -UseBasicParsing -Uri $vbox_url).Links | Where-Object {$_.href -like "*$versionString*Win.exe"}
   }
 } catch {
   $_.Exception.Response.StatusCode
 }
-$vbox_installer_url = [System.Uri]$vbox_link.href
-$vbox_installer_filename = $vbox_installer_url.Segments | Select-Object -Last 1
+$href = if ($vbox_link.href.StartsWith('//')) { "http:$($vbox_link.href)" } else { $vbox_link.href }
+$vbox_installer_url = [System.Uri]$href
+Write-Host "Found vbox_installer_url: $vbox_installer_url"
+$vbox_installer_filename = [System.IO.Path]::GetFileName($vbox_installer_url.ToString())
 $vbox_installer_version = Write-Output $vbox_installer_filename | select-string -Pattern '([0-9]+(\.[0-9]+)+)' | ForEach-Object{$_.Matches[0].Value}
 $vbox_installer = "$env:temp\$($vbox_installer_filename)"
 Write-Host "VirtualBox installer `"$vbox_installer_version`" (installed: $installed_vbox_version)"
